@@ -1,2 +1,2 @@
 # bggn213
-Class work for bioinformatics class at UCSD
+Class work for bioinformatics class at UC San Diego
