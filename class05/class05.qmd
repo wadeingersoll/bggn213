@@ -1,7 +1,7 @@
 ---
 title: "Class05: Data Visualization with ggplot"
 author: "Wade Ingersoll (PID: A69038080)"
-format: pdf
+format: gfm
 ---
 
 Today we are playing with plotting and graphics in R.
