@@ -8,4 +8,4 @@ Class work for bioinformatics class [BGGN213 at UC San Diego](https://bioboot.gi
 - Class 05: [Data Visualization](class05/class05.md)
 - Class 06: [Writing R functions](Class06/class06_functions.md)
 - Class 07: [Machine Learning for Bioinformatics 1](class07/class07_machine_learning.md)
-- Class 08: [Unsupervised learning mini-project]()
+- Class 08: [Unsupervised learning mini-project](Class08_mini_project/Class08_ML_mini_project.md)
