@@ -1,0 +1,419 @@
+---
+title: "Class 9: Structural Bioinformatics"
+author: "Wade Ingersoll (PID: A69038080)"
+format: pdf
+toc: true
+---
+
+## The PDB database
+
+The main repository for biomolecular structure data is the Protien Data Bank (PDB) https://www.rcsb.org/
+
+Let's have a quick look at the composition of this database:
+
+```{r}
+# Read in data file
+stats <- read.csv("Data Export Summary.csv")
+
+# View it
+stats
+```
+We need to remove commas:
+
+```{r}
+as.numeric(sub(",", "", stats$X.ray))
+```
+
+However, this is not efficient so we will use a different function from the **readr** package.
+
+```{r}
+library(readr)
+
+stats <- read_csv("Data Export Summary.csv")
+stats
+```
+\newpage
+Now we can answer Q1 (Percent X-Ray and EM)
+
+```{r}
+n.total <- sum(stats$Total)
+n.xray <- sum(stats$`X-ray`)
+n.em <- sum(stats$EM)
+
+round( n.xray/n.total * 100, 2 )
+round( n.em/n.total * 100, 2 )
+```
+
+
+> **Q1:** What percentage of structures in the PDB are solved by X-Ray and Electron Microscopy.
+
+> **Answer:** X-Ray = 81.43% and EM = 12.27% (see code above for calculations)
+
+
+\newpage
+Now let's answer Q2
+
+```{r}
+n.total <- sum(stats$Total)
+protein <- stats$Total[1]
+
+round( protein/n.total * 100, 2 )
+```
+
+> **Q2:** What proportion of structures in the PDB are protein?
+
+> **Answer:** 86.05% (see code above for calculations)
+
+
+\newpage
+Now let's answer Q3
+
+> **Q3:** Type HIV in the PDB website search box on the home page and determine how many HIV-1 protease structures are in the current PDB? (Make a barplot overview)
+
+> **Answer:** 1,150
+
+```{r}
+library(ggplot2)
+
+ggplot(stats) + 
+  aes(reorder(`Molecular Type`, Total), Total) + 
+  geom_col()
+```
+
+\newpage
+## Visualizing structure data
+
+The Mol* viewer embeded in many bioinformatics websites. The homepage is https://molstar.org/ (use pdb accession number 1hsg)
+
+I can insert any figure or image file using markdown format
+
+![The HIV-Pr dimer with bound inhibitor](1HSG.png)
+
+![The catalytic ASP25 and active-site water](1HSG_H2O_308 copy.png)
+
+![molecular surface](1HSG_molecular_surface.png)
+
+## Bio3D package for structural bioinformatics
+
+We can use the bio3d package to read and analyze biomolecular data in R:
+
+```{r}
+library(bio3d)
+
+hiv <- read.pdb("1hsg")
+hiv
+```
+
+```{r}
+head(hiv$atom)
+```
+
+Let's get the sequence
+
+```{r}
+pdbseq( hiv )
+```
+
+Let's trim to chain A and get just its sequence:
+
+```{r}
+chainA <- trim.pdb( hiv, chain="A" )
+chainA.seq <- pdbseq(chainA)
+```
+
+Let's blast
+
+```{r blast_hiv, cache=TRUE}
+blast <- blast.pdb(chainA.seq)
+```
+
+```{r}
+head(blast$hit.tbl)
+```
+
+Plot a quick overview of blast results
+
+```{r}
+hits <- plot(blast)
+```
+
+```{r}
+hits$pdb.id
+```
+
+## Prediction of functional motions
+
+We can run a Normal Mode Analysis (NMA) to predict large scale motions/flexibility/dynamics of any biomolecule that we can read into R.
+
+```{r}
+adk <- read.pdb("1ake")
+
+adk_A <- trim.pdb(adk, chain="A")
+adk_A
+```
+
+```{r}
+m <- nma(adk_A)
+plot(m)
+```
+
+Let's write out a "trajectory" or predicted motion
+
+```{r}
+mktrj(m, file="adk_nma.pdb")
+```
+
+## Play with 3D viewing in R
+
+We can use the new **bio3dview** package, which is not yet on CRAN, to render interactive 3D views in R and HTML quarto output reports.
+
+To install from GitHub we can use the **pak** package.
+
+```{r}
+# library(bio3dview)
+# 
+# view.pdb(adk)
+```
+
+\newpage
+## 4. Comparative structure analysis of Adenylate Kinase
+
+The goal of this section is to perform **principal component analysis** (PCA) on the complete collection of Adenylate kinase structures in the protein data-bank (PDB).
+
+**Adenylate kinase** (often called simply Adk) is a ubiquitous enzyme that functions to maintain the equilibrium between cytoplasmic nucleotides essential for many cellular processes. Adk operates by catalyzing the reversible transfer of a phosphoryl group from ATP to AMP. This reaction requires a rate limiting conformational transition (i.e. change in shape). Here we analyze all currently available Adk structures in the PDB to reveal detailed features and mechanistic principles of these essential shape changing transitions.
+
+The **bio3d** package pca() function provides a convenient interface for performing PCA of biomolecular structure data. As we have discussed in previous classes, PCA is a statistical approach used to transform large data-sets down to a few important components that usefully describe the directions where there is most variance. In terms of protein structures PCA can be used to capture major structural variations within a set of structures (a.k.a. structure ensemble). This can make interpreting major conformational states (such as ‘active’ and ‘inactive’ or ‘ligand bound’ and ‘un-bound’ states) and structural mechanisms for activation or regulation more clear.
+
+## Overview
+Starting from only one Adk PDB identifier (**PDB ID: 1AKE**) we will search the entire PDB for related structures using BLAST, fetch, align and superpose the identified structures, perform PCA and finally calculate the normal modes of each individual structure in order to probe for potential differences in structural flexibility.
+
+## Setup
+
+We will begin by first installing the packages we need for today’s session.
+
+***Install packages in the R console NOT your Rmd/Quarto file***
+
+> **Q10:** Which of the packages above is found only on BioConductor and not CRAN?
+
+> **Answer:** msa
+
+
+> **Q11:** Which of the above packages is not found on BioConductor or CRAN?
+
+> **Answer:** bio3d-view
+
+
+> **Q12:** True or False? Functions from the devtools package can be used to install packages from GitHub and BitBucket? - True!
+
+\newpage
+## Search and retrieve ADK structures
+Below we perform a blast search of the PDB database to identify related structures to our query Adenylate kinase (ADK) sequence. In this particular example we use function get.seq() to fetch the query sequence for chain A of the PDB ID 1AKE and use this as input to blast.pdb(). Note that get.seq() would also allow the corresponding UniProt identifier.
+
+```{r}
+library(bio3d)
+aa <- get.seq("1ake_A")
+```
+
+```{r}
+aa
+```
+
+> **Q13:** How many amino acids are in this sequence, i.e. how long is this sequence?
+
+> **Answer:** 214
+
+
+Now we can use this sequence as a query to BLAST search the PDB to find similar sequences and structures.
+
+```{r, cache=TRUE}
+# Blast or hmmer search 
+b <- blast.pdb(aa)
+```
+The function plot.blast() facilitates the visualization and filtering of the Blast results. It will attempt to set a seed position to the point of largest drop-off in normalized scores (i.e. the biggest jump in E-values). In this particular case we specify a cutoff (after initial plotting) of to include only the relevant E.coli structures:
+
+```{r}
+# Plot a summary of search results
+hits <- plot(b)
+```
+```{r}
+# List out some 'top hits'
+head(hits$pdb.id)
+```
+
+The Blast search and subsequent filtering identified a total of 13 related PDB structures to our query sequence. The PDB identifiers of this collection are accessible through the `$pdb.id attribute to the hits object (i.e. hits$pdb.id)`. Note that adjusting the cutoff argument (to `plot.blast()`) will result in a decrease or increase of hits.
+
+We can now use function `get.pdb()` and `pdbslit()` to fetch and parse the identified structures.
+
+```{r, warning=FALSE}
+# Download releated PDB files
+files <- get.pdb(hits$pdb.id, path="pdbs", split=TRUE, gzip=TRUE)
+```
+
+## Align and superpose structures
+
+Next we will use the `pdbaln()` function to align and also optionally fit (i.e. superpose) the identified PDB structures.
+
+```{r}
+# Align releated PDBs
+pdbs <- pdbaln(files, fit = TRUE, exefile="msa")
+```
+
+```{r}
+# Vector containing PDB codes for figure axis
+ids <- basename.pdb(pdbs$id)
+
+# Draw schematic alignment
+#plot(pdbs, labels=ids)
+
+# Plot is too large to render so I took a screenshot and inserted it manually:
+```
+![sequence alignment plot](sequence_alignment_overview.png)
+
+## Optional: Viewing our superposed structures
+We can view our superposed results with the new bio3d.view view() function:
+
+```{r}
+library(bio3d.view)
+library(rgl)
+
+view.pdbs(pdbs)
+```
+
+![bio3d.view.png](bio3d.view.png)
+## Annotate collected PDB structures
+
+The function `pdb.annotate()` provides a convenient way of annotating the PDB files we have collected. Below we use the function to annotate each structure to its source species. This will come in handy when annotating plots later on:
+
+```{r}
+anno <- pdb.annotate(ids)
+unique(anno$source)
+```
+We can view all available annotation data:
+
+```{r}
+anno
+```
+
+## Principal component analysis
+
+Function `pca()` provides principal component analysis (PCA) of the structure data. PCA is a statistical approach used to transform a data set down to a few important components that describe the directions where there is most variance. In terms of protein structures PCA is used to capture major structural variations within an ensemble of structures.
+
+PCA can be performed on the structural ensemble (stored in the pdbs object) with the function `pca.xyz()`, or more simply `pca()`.
+
+```{r}
+# Perform PCA
+pc.xray <- pca(pdbs)
+plot(pc.xray)
+```
+
+Function `rmsd()` will calculate all pairwise RMSD values of the structural ensemble. This facilitates clustering analysis based on the pairwise structural deviation:
+
+```{r}
+# Calculate RMSD
+rd <- rmsd(pdbs)
+
+# Structure-based clustering
+hc.rd <- hclust(dist(rd))
+grps.rd <- cutree(hc.rd, k=3)
+
+plot(pc.xray, 1:2, col="grey50", bg=grps.rd, pch=21, cex=1)
+```
+The plot shows a conformer plot – a low-dimensional representation of the conformational variability within the ensemble of PDB structures. The plot is obtained by projecting the individual structures onto two selected PCs (e.g. PC-1 and PC-2). These projections display the inter-conformer relationship in terms of the conformational differences described by the selected PCs.
+
+
+## 5. Optional further visualization
+
+To visualize the major structural variations in the ensemble the function `mktrj()` can be used to generate a trajectory PDB file by interpolating along a give PC (eigenvector):
+
+```{r}
+# Visualize first principal component
+pc1 <- mktrj(pc.xray, pc=1, file="pc_1.pdb")
+```
+
+We can also view our results with the new bio3d.view view() function:
+
+```{r}
+view.xyz(pc1)
+```
+
+![pc1_xyz.png](pc1_xyz.png)
+We could set the color to highlight the most variable regions like so:
+
+```{r}
+view.xyz(pc1, col=vec2color( rmsf(pc1) ))
+```
+
+![pc1_most_variable.png](pc1_most_variable copy.png)
+We can also plot our main PCA results with ggplot:
+
+```{r}
+#Plotting results with ggplot2
+library(ggplot2)
+library(ggrepel)
+
+df <- data.frame(PC1=pc.xray$z[,1], 
+                 PC2=pc.xray$z[,2], 
+                 col=as.factor(grps.rd),
+                 ids=ids)
+
+p <- ggplot(df) + 
+  aes(PC1, PC2, col=col, label=ids) +
+  geom_point(size=2) +
+  geom_text_repel(max.overlaps = 20) +
+  theme(legend.position = "none")
+p
+```
+
+## Comparative analysis of protein structures
+
+Starting with a sequence or structure ID (accession number), let's run a complete analysis pipeline
+
+```{r}
+library(bio3d)
+
+id <- ("1ake_A")
+
+aa <- get.seq(id)
+aa
+```
+
+```{r, cache=TRUE}
+blast <- blast.pdb(aa)
+hits <- plot(blast)
+```
+```{r}
+hits$pdb.id
+```
+
+Download all these "hits" that are similar to our starting id sequence
+```{r}
+# Download releated PDB files
+files <- get.pdb(hits$pdb.id, path="pdbs", split=TRUE, gzip=TRUE)
+```
+
+```{r}
+# Align releated PDBs
+pdbs <- pdbaln(files, fit = TRUE, exefile="msa")
+```
+
+```{r}
+pc.xray <- pca(pdbs)
+plot(pc.xray)
+```
+
+```{r}
+plot(pc.xray, 1:2)
+```
+
+```{r}
+mktrj(pc.xray, file="pca_results.pdb")
+```
+
+```{r}
+library(bio3dview)
+
+view.pca(pc.xray)
+```
+
+
+

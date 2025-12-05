@@ -1,0 +1,55 @@
+---
+title: "HW Class 6 (Q6 - Write a Function)"
+author: "Wade Ingersoll (PID: A69038080)"
+toc: TRUE
+format: pdf
+---
+
+## Original Code: ##
+
+```{r}
+library(bio3d)
+s1 <- read.pdb("4AKE")  # kinase with drug
+s2 <- read.pdb("1AKE")  # kinase no drug
+s3 <- read.pdb("1E4Y")  # kinase with drug
+s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s2.chainA <- trim.pdb(s2, chain="A", elety="CA")
+s3.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+plotb3(s1.b, sse=s1.chainA, typ="l", ylab="Bfactor")
+plotb3(s2.b, sse=s2.chainA, typ="l", ylab="Bfactor")
+plotb3(s3.b, sse=s3.chainA, typ="l", ylab="Bfactor")
+```
+
+## Improved Code: ##
+
+```{r}
+# Load bio3d
+library(bio3d)
+
+# Build function that takes PDB codes as strings for input
+# This function will output b3 plots of the protein
+new_function <- function(x) {
+  y <- read.pdb(x)
+  y.chainA <- trim.pdb(y, chain="A", elety="CA")
+  y.b <- y.chainA$atom$b
+  plotb3(y.b, sse=y.chainA, typ="l", ylab="Bfactor")
+}
+
+# Using sapply(), we can quickly generate all 3 plots
+sapply(c("4AKE", "1AKE", "1E4Y"), new_function)
+```
+
+## New Function Used in For-Loop: ##
+
+```{r}
+# Create object of PDB codes
+codes <- c("4AKE", "1AKE", "1E4Y")
+
+for (i in codes) {
+  new_function(i)
+}
+```
+
