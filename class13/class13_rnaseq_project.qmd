@@ -1,0 +1,217 @@
+---
+title: "Class 13: RNAseq Mini Project"
+author: "Wade Ingersoll (PID: A69038080)"
+format: pdf
+toc: true
+---
+
+## Background
+
+Today we will run through a complete RNAseq analysis
+
+The data for for hands-on session comes from GEO entry: GSE37704, which is associated with the following publication:
+
+Trapnell C, Hendrickson DG, Sauvageau M, Goff L et al. "Differential analysis of gene regulation at transcript resolution with RNA-seq". Nat Biotechnol 2013 Jan;31(1):46-53. PMID: 23222703
+
+The authors report on differential analysis of lung fibroblasts in response to loss of the developmental transcription factor HOXA1. Their results and others indicate that HOXA1 is required for lung fibroblast and HeLa cell cycle progression.
+
+## Data Import
+
+```{r}
+counts <- read.csv("/Users/wadeingersoll/Desktop/BGGN213/class13/GSE37704_featurecounts.csv", row.names = 1)
+metadata <- read.csv("/Users/wadeingersoll/Desktop/BGGN213/class13/GSE37704_metadata.csv")
+```
+
+Check correspondence of `metadata` and `counts` (i.e. that the columns in `counts` match the rows in the `metadata`).
+
+```{r}
+metadata
+```
+```{r}
+head(counts)
+```
+```{r}
+colnames(counts)
+```
+```{r}
+metadata$id
+```
+\newpage
+
+> **Q1:** Fix to remove that first "length" column of `counts`
+
+```{r}
+counts <- counts[,-1]
+```
+
+Also let's remove low count genes
+
+```{r}
+tot.counts <- rowSums(counts)
+head(tot.counts)
+```
+
+Let's remove all zero count genes
+
+```{r}
+zero.inds <- tot.counts == 0
+head(zero.inds)
+```
+
+```{r}
+counts <- counts[!zero.inds,]
+```
+
+```{r}
+all(c(T, T, F))
+```
+```{r}
+test_cols <- !all(colnames(counts) == metadata$id)
+```
+
+
+```{r}
+if( test_cols ) {
+  message("Wow... there is a problem with the metadata counts setup")
+}
+```
+
+
+
+## Setup for DESeq
+
+```{r}
+library(DESeq2)
+```
+
+```{r}
+library(DESeq2)
+dds <- DESeqDataSetFromMatrix(countData = counts,
+                              colData = metadata,
+                              design = ~condition)
+```
+
+
+## Run DESeq
+
+```{r}
+dds <- DESeq(dds)
+```
+
+## Get results
+
+```{r}
+res <- results(dds)
+```
+
+```{r}
+head(res)
+```
+
+
+## Add annotation
+
+```{r}
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+
+columns(org.Hs.eg.db)
+
+res$symbol = mapIds(org.Hs.eg.db,
+                    keys=row.names(res), 
+                    keytype="ENSEMBL",
+                    column="SYMBOL",
+                    multiVals="first")
+
+res$entrez = mapIds(org.Hs.eg.db,
+                    keys=row.names(res),
+                    keytype="ENSEMBL",
+                    column="ENTREZID",
+                    multiVals="first")
+
+res$name =   mapIds(org.Hs.eg.db,
+                    keys=row.names(res),
+                    keytype="ENSEMBL",
+                    column="GENENAME",
+                    multiVals="first")
+
+head(res, 10)
+```
+
+
+## Visualize results
+
+```{r}
+library(ggplot2)
+
+# Make a color vector for all genes
+mycols <- rep("gray", nrow(res) )
+
+# Color red the genes with absolute fold change above 2
+mycols[ abs(res$log2FoldChange) > 2 ] <- "red"
+
+# Color blue those with adjusted p-value less than 0.01
+#  and absolute fold change more than 2
+inds <- (res$padj < .05) & (abs(res$log2FoldChange) > 2 )
+mycols[ inds ] <- "blue"
+
+
+ggplot(res) + aes(log2FoldChange, -log(padj)) +
+  geom_point(col=mycols) + 
+  geom_vline(xintercept = c(-2,2), col='red') +
+  geom_hline(yintercept = -log(0.05), col='red')
+```
+
+
+## Pathway analysis
+
+```{r}
+library(gage)
+library(gageData)
+
+data(kegg.sets.hs)
+data(sigmet.idx.hs)
+```
+
+For **gage** we want a named vector of importance
+```{r}
+
+```
+
+### GO Analysis
+
+Let's try GO Analysis and compare to KEGG analysis
+
+```{r}
+data(go.sets.hs)
+data(go.subs.hs)
+
+# # Focus on Biological Process subset of GO
+# gobpsets = go.sets.hs[go.subs.hs$BP]
+# 
+# gobpres = gage(foldchanges, gsets=gobpsets, same.dir=TRUE)
+# 
+# lapply(gobpres, head)
+```
+
+### Reactome
+
+Some folks really like Reactome online (i.e. their webpage viewer) rather than the R package of the same name (available from bioconductor).
+
+To use the viewer we want to upload our set of gene symbols for the genes we want to focus on (here those with a P-value below 0.05)
+
+```{r}
+sig_genes <- res[res$padj <= 0.05 & !is.na(res$padj), "symbol"]
+print(paste("Total number of significant genes:", length(sig_genes)))
+```
+
+```{r}
+head(sig_genes)
+```
+
+## Save results
+
+```{r}
+#save(res, file="my_results.RData")
+```
+

@@ -1,0 +1,6 @@
+---
+title: "Class 19: Investigating Pertussis"
+author: "Wade Ingersoll (PID: A69038080)"
+format: pdf
+---
+

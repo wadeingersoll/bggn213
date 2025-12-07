@@ -1,0 +1,254 @@
+---
+title: "Class 10: Halloween Mini-Project"
+author: "Wade Ingersoll (PID: A69038080)"
+format: pdf
+---
+
+## Background
+
+In this mini-project, you will explore FiveThirtyEight’s Halloween Candy dataset. FiveThirtyEight, sometimes rendered as just 538, is an American website that focuses mostly on opinion poll analysis, politics, economics, and sports blogging. They recently ran a rather large poll to determine which candy their readers like best. From their website: “While we don’t know who exactly voted, we do know this: 8,371 different IP addresses voted on about 269,000 randomly generated candy matchups”.
+
+Your task is to explore their candy dataset to find out answers to these types of questions - but most of all your job is to have fun, learn by doing hands on data analysis, and hopefully make this type of analysis less frightining for the future! **Let’s get started.**
+
+
+## 1. Importing candy data
+
+First things first, let’s get the data from the FiveThirtyEight GitHub repo. You can either read from the URL directely or download this candy-data.csv file and place it in your project directory. Either way we need to load it up with read.csv() and inspect the data to see exactly what we’re dealing with.
+
+```{r}
+candy_file <- "candy-data.csv"
+
+candy <- read.csv(candy_file, row.names=1)
+head(candy)
+```
+
+What is in this dataset?
+
+```{r}
+library(flextable)
+flextable::flextable( head(candy) )
+```
+
+
+We will take a whirlwind tour of this dataset and in the process answer the questions highlighted in red throught this page that aim to guide your exploration process. We will then wrap up by trying Principal Component Analysis (PCA) on this dataset to get yet more experience with this important multivariate method. It will yield a kind of “Map of Hallowen Candy Space”. How cool is that! Let’s explore…
+
+> **Q1:** How many different candy types are in this dataset?
+
+> **Answer1:** There are 85 different candy types; see code below for calculations.
+
+```{r, message=FALSE}
+library(dplyr)
+
+candy |> nrow()
+```
+
+
+> Q2. How many fruity candy types are in the dataset?
+
+> **Answer:** There are 38 fruity candy types; see code below for calculations.
+
+```{r}
+sum(candy$fruity)
+```
+
+> Q3. What is your favorite candy in the dataset and what is it’s winpercent value?
+
+```{r}
+candy["Twix", ]$winpercent
+```
+
+
+> Q4. What is the winpercent value for “Kit Kat”?
+> Q5. What is the winpercent value for “Tootsie Roll Snack Bars”?
+
+
+```{r}
+library(skimr)
+skim(candy)
+```
+
+
+> Q8. Plot a histogram of winpercent values
+
+```{r}
+library(ggplot2)
+
+ggplot(candy) +
+  aes(winpercent) +
+  geom_histogram(bins=20)
+```
+
+
+
+> Q9. Is the distribution of winpercent values symmetrical?
+
+```{r}
+ggplot(candy) +
+  aes(winpercent) +
+  geom_density()
+```
+
+
+> Q10. Is the center of the distribution above or below 50%?
+
+> **Answer:** It is below 50%
+
+```{r}
+mean(candy$winpercent)
+```
+```{r}
+summary(candy$winpercent)
+```
+
+
+> Q11. On average is chocolate candy higher or lower ranked than fruit candy?
+
+```{r}
+# Step 1. Find all chocolate candy in the dataset
+choc.inds <- candy$chocolate==1
+choc.candy <- candy[choc.inds,]
+choc.candy
+
+# Step 2. Extract their `winpercent` values
+choc.win <- choc.candy$winpercent
+choc.win
+
+# Step 3. Find the mean of these values
+choc.mean <- mean(choc.win)
+
+# Step 4-6. Do the same for fruity candy
+fruity.inds <- candy$fruity==1
+fruity.candy <- candy[fruity.inds,]
+fruity.win <- fruity.candy$winpercent
+fruity.mean <- mean(fruity.win)
+
+# Step 7. Which mean value is higher
+
+choc.mean
+fruity.mean
+
+# chocolate is higher
+```
+
+
+> Q12. Is this difference statistically significant?
+
+```{r}
+t.test(choc.win, fruity.win)
+```
+
+
+
+
+
+
+
+
+```{r}
+round ( mean(candy$winpercent), 4)
+```
+```{r}
+candy |> select(winpercent)
+```
+
+
+```{r}
+win <- candy$winpercent
+win.mean <- mean(win)
+round(win.mean)
+```
+
+
+> Q13. What are the five least liked candy types in this set?
+
+```{r}
+x <- c(10, 2, 5, 1)
+order(x)
+```
+
+```{r}
+ord.ind <- order(candy$winpercent)
+head( candy[ord.ind, ], 5)
+```
+
+
+> Q14. What are the top 5 all time favorite candy types out of this set?
+
+```{r}
+ord.ind <- order(candy$winpercent)
+tail( candy[ord.ind, ], 5)
+```
+
+> Q15. Make a first barplot of candy ranking based on winpercent values.
+
+```{r}
+ggplot(candy) + 
+  aes(winpercent, reorder( rownames(candy), winpercent)) + 
+  geom_col()
+```
+
+Add some color
+
+```{r}
+my_cols <- rep("black", nrow(candy))
+my_cols[candy$chocolate==1] <- "chocolate"
+my_cols[candy$bar==1] <- "brown"
+my_cols[candy$fruity==1] <- "pink"
+
+ggplot(candy) + 
+  aes(x=winpercent, 
+      y=reorder( rownames(candy), winpercent)) + 
+  geom_col(fill=my_cols)
+```
+
+## Winpercent vs Pricepercent
+
+```{r}
+my_cols[candy$fruity==1] <- "red"
+
+ggplot(candy) +
+  aes(winpercent, pricepercent, label=rownames(candy)) +
+  geom_point(col=my_cols) +
+  geom_text()
+```
+
+## Correlation
+
+```{r}
+cij <- cor(candy)
+```
+
+```{r}
+library(corrplot)
+corrplot(cij)
+```
+
+## Principal Component Analysis
+
+The main function in base R for this `prcomp()` and we want to set `scale=TRUE` here:
+
+```{r}
+pca <- prcomp(candy, scale=TRUE)
+summary(pca)
+```
+
+Let's look at our first main result figure - the "PC plot" or PC1 vs PC2
+
+```{r}
+library(ggrepel)
+ggplot(pca$x) + 
+  aes(PC1, PC2, label=rownames(pca$x)) + 
+  geom_point(col=my_cols) +
+  geom_text_repel(col=my_cols)
+```
+
+Don't forget about your variable "loadings" - how the original variables contribute to your new PCs...
+
+```{r}
+ggplot(pca$rotation) + 
+  aes(PC1, rownames(pca$rotation)) + 
+  geom_col()
+```
+
+
+

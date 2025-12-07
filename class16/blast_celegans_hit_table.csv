@@ -1,0 +1,4 @@
+"structureId","chainId","macromoleculeType","chainLength","experimentalTechnique","resolution","scopDomain","pfam","ligandId","ligandName","source","structureTitle","citation","rObserved","rFree","rWork","spaceGroup"
+"5ARA","W","Protein",217,"EM",7.4,NA,"ATP synthase A chain (ATP-synt_A)",NA,NA,"Bos taurus","Bovine mitochondrial ATP synthase state 1a","Zhou, A., et al. Elife (2015)",NA,NA,NA,NA
+"6ZBB","a","Protein",226,"EM",3.61,NA,NA,"CDL","CARDIOLIPIN","Bos taurus","bovine ATP synthase Fo domain","Spikes, T.E., et al. Proc Natl Acad Sci U S A (2020)",NA,NA,NA,NA
+"8H9F","N","Protein",226,"EM",2.69,NA,"ATP synthase A chain (ATP-synt_A)",NA,NA,"Homo sapiens","Human ATP synthase state 1 subregion 3","Lai, Y., et al. Mol Cell (2023)",NA,NA,NA,NA

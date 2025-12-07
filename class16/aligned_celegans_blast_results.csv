@@ -1,0 +1,4 @@
+"","queryid","subjectids","identity","alignmentlength","mismatches","gapopens","q.start","q.end","s.start","s.end","evalue","bitscore","positives","mlog.evalue","pdb.id","acc"
+"1","Query_3621353","5ARA_W",32.374,139,86,4,69,199,77,215,1.18e-10,60.1,51.08,22.8603364914629,"5ARA_W","5ARA_W"
+"2","Query_3621353","6ZBB_a",32.374,139,86,4,69,199,86,224,1.27e-10,60.1,51.08,22.78683402947,"6ZBB_a","6ZBB_a"
+"3","Query_3621353","8H9F_N",32.051,156,94,5,53,199,72,224,1.59e-09,57,48.08,20.2595318207143,"8H9F_N","8H9F_N"
