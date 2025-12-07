@@ -260,6 +260,7 @@ pdbs <- pdbaln(files, fit = TRUE, exefile="msa")
 
 ```{r}
 # Vector containing PDB codes for figure axis
+library(bio3d)
 ids <- basename.pdb(pdbs$id)
 
 # Draw schematic alignment
@@ -273,10 +274,12 @@ ids <- basename.pdb(pdbs$id)
 We can view our superposed results with the new bio3d.view view() function:
 
 ```{r}
-library(bio3d.view)
-library(rgl)
-
-view.pdbs(pdbs)
+# library(devtools)
+# devtools::install_bitbucket("Grantlab/bio3d-view")
+# library(bio3d.view)
+# #library(rgl)
+# 
+# view.pdbs(pdbs)
 ```
 
 ![bio3d.view.png](bio3d.view.png)
@@ -333,14 +336,14 @@ pc1 <- mktrj(pc.xray, pc=1, file="pc_1.pdb")
 We can also view our results with the new bio3d.view view() function:
 
 ```{r}
-view.xyz(pc1)
+#view.xyz(pc1)
 ```
 
 ![pc1_xyz.png](pc1_xyz.png)
 We could set the color to highlight the most variable regions like so:
 
 ```{r}
-view.xyz(pc1, col=vec2color( rmsf(pc1) ))
+#view.xyz(pc1, col=vec2color( rmsf(pc1) ))
 ```
 
 ![pc1_most_variable.png](pc1_most_variable copy.png)
@@ -410,9 +413,9 @@ mktrj(pc.xray, file="pca_results.pdb")
 ```
 
 ```{r}
-library(bio3dview)
-
-view.pca(pc.xray)
+# library(bio3dview)
+# 
+# view.pca(pc.xray)
 ```
 
 
