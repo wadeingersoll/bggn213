@@ -12,3 +12,4 @@ Class work for bioinformatics class [BGGN213 at UC San Diego](https://bioboot.gi
 - Class 10: [Halloween Mini Project](class10/class10_halloween_UPDATED.md)
 - Class 11: [Structure Prediction with AlphaFold2](class11/class11_alphafold.md)
 - Class 12: [Transcriptomics/RNA-Seq Data](class12/class12_transcriptomics.md)
+- Class 13: [RNA-seq Mini-Project](class13/class13_deseq2_mini_project.md)
