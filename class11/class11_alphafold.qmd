@@ -51,9 +51,8 @@ library(bio3d.view)
 pdbs <- pdbaln(pdb_files, fit=TRUE, exefile="msa")
 ```
 ```{r}
-view.pdb(pdbs)
-```
-```{r}
+#view.pdb(pdbs)
+
 aln_file <- list.files(path=results_dir,
                        pattern=".a3m$",
                         full.names = TRUE)
@@ -61,7 +60,7 @@ aln_file
 ```
 
 ```{r}
-sim <- conserv(aln_file)
+#sim <- conserv(aln_file)
 ```
 
 
