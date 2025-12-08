@@ -9,3 +9,4 @@ Class work for bioinformatics class [BGGN213 at UC San Diego](https://bioboot.gi
 - Class 07: [Machine Learning for Bioinformatics 1](class07/class07_machine_learning.md)
 - Class 08: [Unsupervised learning mini-project](Class08_mini_project/Class08_ML_mini_project.md)
 - Class 09: [Structural Bioinformatics](class09/class09.md)
+- Class 10: [Halloween Mini Project](class10/class10_halloween_UPDATED.md)
